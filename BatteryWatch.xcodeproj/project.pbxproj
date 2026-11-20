@@ -10,6 +10,7 @@
 		33E0EC21EBF1D47AE1E24463 /* BatteryWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 241AAF9F77E5A1E978A7CD7E /* BatteryWatchApp.swift */; };
 		6D184E5B1ACD8AFB6F9239D7 /* BatteryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61629F9FA8412EBEB9000FF0 /* BatteryReader.swift */; };
 		79B58E5397CC6DAE834E8727 /* MenuContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C166833A2370FF9A9CDBD61 /* MenuContentView.swift */; };
+		94DFF13CF7E69D70D1C3B31C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C8A5E2FF5661AED1C3721DD6 /* Assets.xcassets */; };
 		CB123783D1CA841F8264AB30 /* BatteryMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 255E5E02B74262CE5D7C1B67 /* BatteryMonitor.swift */; };
 /* End PBXBuildFile section */
 
@@ -18,6 +19,7 @@
 		255E5E02B74262CE5D7C1B67 /* BatteryMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryMonitor.swift; sourceTree = "<group>"; };
 		61629F9FA8412EBEB9000FF0 /* BatteryReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryReader.swift; sourceTree = "<group>"; };
 		9C166833A2370FF9A9CDBD61 /* MenuContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuContentView.swift; sourceTree = "<group>"; };
+		C8A5E2FF5661AED1C3721DD6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		EE84E1251E8AC2C26E563B73 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		F4AEDC3A9567ED2E3472CC16 /* BatteryWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BatteryWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -26,6 +28,7 @@
 		074A3476CCEDBACBC3778D5B /* BatteryWatch */ = {
 			isa = PBXGroup;
 			children = (
+				C8A5E2FF5661AED1C3721DD6 /* Assets.xcassets */,
 				255E5E02B74262CE5D7C1B67 /* BatteryMonitor.swift */,
 				61629F9FA8412EBEB9000FF0 /* BatteryReader.swift */,
 				241AAF9F77E5A1E978A7CD7E /* BatteryWatchApp.swift */,
@@ -59,6 +62,7 @@
 			buildConfigurationList = B29B27D33888BC13BB72E701 /* Build configuration list for PBXNativeTarget "BatteryWatch" */;
 			buildPhases = (
 				65AD013D12FC7D7F7F5CC3E3 /* Sources */,
+				0BB8F75042D5E4364FB82614 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -103,6 +107,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		0BB8F75042D5E4364FB82614 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				94DFF13CF7E69D70D1C3B31C /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		65AD013D12FC7D7F7F5CC3E3 /* Sources */ = {
