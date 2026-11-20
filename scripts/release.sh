@@ -1,20 +1,37 @@
 #!/usr/bin/env bash
-# Builds, signs (Developer ID), notarizes and staples BluetoothBatteryWatch, publishes a GitHub
-# release and updates the Homebrew cask in bombadiltom/homebrew-tap.
+# Releases BluetoothBatteryWatch.
 #
-# Usage:  scripts/release.sh <version>            e.g. scripts/release.sh 1.0
-#         scripts/release.sh <version> --no-publish   (build + notarize only, no GitHub/tap changes)
+#   scripts/release.sh <version>
+#       Normal release: tags the current (pushed) commit as v<version> and pushes the tag.
+#       The "Release" GitHub Action then builds, signs, notarizes, publishes the GitHub
+#       release and updates the cask in bombadiltom/homebrew-tap.
 #
-# One-time prerequisites (see README.md → Releasing):
-#   - a "Developer ID Application" certificate in the login keychain
+#   scripts/release.sh <version> --build-only
+#       Builds, signs and notarizes into dist/ without publishing anything.
+#
+#   scripts/release.sh <version> --publish-existing-tag
+#       What the GitHub Action runs: build + notarize the checked-out tag v<version>, then
+#       publish the GitHub release and update the cask. Also works locally as a fallback if
+#       the Action is unavailable (check out the tag first).
+#
+# Local prerequisites for --build-only / --publish-existing-tag (see README.md → Releasing):
+#   - a "Developer ID Application" certificate in the keychain
 #   - notarization credentials stored with:
 #       xcrun notarytool store-credentials BluetoothBatteryWatch --apple-id <apple-id> --team-id <team-id>
-#   - gh logged in as $GH_USER (default: bombadiltom)
+#   - gh logged in as $GH_USER (default: bombadiltom), or GH_TOKEN set
+#
+# Environment overrides used by CI: NOTARY_KEYCHAIN (keychain holding the notary profile),
+# TAP_DEPLOY_KEY (SSH private key with write access to the tap), GH_TOKEN.
 set -euo pipefail
 
-VERSION="${1:?usage: scripts/release.sh <version> [--no-publish]}"
-PUBLISH=1
-[[ "${2:-}" == "--no-publish" ]] && PUBLISH=0
+usage="usage: scripts/release.sh <version> [--build-only | --publish-existing-tag]"
+VERSION="${1:?$usage}"
+MODE="${2:-tag}"
+case "$MODE" in
+  tag | --build-only | --publish-existing-tag) ;;
+  *) echo "$usage" >&2; exit 2 ;;
+esac
+[[ "$VERSION" =~ ^[0-9]+(\.[0-9]+){1,2}$ ]] || { echo "error: version must look like 1.2 or 1.2.3" >&2; exit 2; }
 
 APP_NAME="BluetoothBatteryWatch"
 REPO="bombadiltom/BluetoothBatteryWatch"
@@ -25,25 +42,46 @@ NOTARY_PROFILE="${NOTARY_PROFILE:-BluetoothBatteryWatch}"
 SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application}"
 TEAM_ID="${TEAM_ID:-K6QN2C7Q55}"
 GH_USER="${GH_USER:-bombadiltom}"
+TAG="v$VERSION"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-if [[ $PUBLISH -eq 1 ]]; then
-  if [[ -n "$(git status --porcelain)" ]]; then
-    echo "error: working tree is not clean — commit first so the release matches a tag." >&2
-    exit 1
-  fi
-  if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
-    echo "error: tag v$VERSION already exists." >&2
-    exit 1
-  fi
+die() { echo "error: $*" >&2; exit 1; }
+
+# --- Mode: tag ------------------------------------------------------------------------------
+
+if [[ "$MODE" == "tag" ]]; then
+  [[ -z "$(git status --porcelain)" ]] || die "working tree is not clean — commit first."
+  git fetch --quiet origin
+  [[ "$(git rev-parse HEAD)" == "$(git rev-parse '@{u}')" ]] \
+    || die "HEAD isn't the same as its upstream — push (or pull) first so the Action builds this commit."
+  ! git rev-parse -q --verify "refs/tags/$TAG" >/dev/null || die "tag $TAG already exists."
+  git tag -a "$TAG" -m "$APP_NAME $VERSION"
+  git push --quiet origin "$TAG"
+  echo "==> Pushed $TAG. The Release action is now building it:"
+  echo "    https://github.com/$REPO/actions/workflows/release.yml"
+  exit 0
 fi
 
-if ! security find-identity -v -p codesigning | grep -q "$SIGN_IDENTITY"; then
-  echo "error: no \"$SIGN_IDENTITY\" certificate in the keychain." >&2
-  exit 1
+# --- Build, sign, notarize -----------------------------------------------------------------
+
+if [[ "$MODE" == "--publish-existing-tag" ]]; then
+  [[ -z "$(git status --porcelain)" ]] || die "working tree is not clean."
+  git rev-parse -q --verify "refs/tags/$TAG" >/dev/null || die "tag $TAG doesn't exist."
+  [[ "$(git rev-parse HEAD)" == "$(git rev-parse "$TAG^{commit}")" ]] || die "HEAD is not at $TAG — check out the tag first."
+  if [[ -z "${GH_TOKEN:-}" ]]; then
+    GH_TOKEN="$(gh auth token --user "$GH_USER")"
+    export GH_TOKEN
+  fi
+  ! gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1 || die "GitHub release $TAG already exists."
 fi
+
+security find-identity -v -p codesigning | grep -q "$SIGN_IDENTITY" \
+  || die "no \"$SIGN_IDENTITY\" certificate in the keychain."
+
+NOTARY_AUTH=(--keychain-profile "$NOTARY_PROFILE")
+[[ -n "${NOTARY_KEYCHAIN:-}" ]] && NOTARY_AUTH+=(--keychain "$NOTARY_KEYCHAIN")
 
 BUILD_DIR="$ROOT/build/release"
 DIST_DIR="$ROOT/dist"
@@ -58,27 +96,27 @@ xcodebuild -project "$APP_NAME.xcodeproj" -scheme "$APP_NAME" -configuration Rel
   -derivedDataPath "$BUILD_DIR" \
   -destination "generic/platform=macOS" \
   MARKETING_VERSION="$VERSION" \
-  DEVELOPMENT_TEAM="$TEAM_ID" \
   CURRENT_PROJECT_VERSION="$(git rev-list --count HEAD)" \
+  DEVELOPMENT_TEAM="$TEAM_ID" \
   CODE_SIGN_STYLE=Manual \
   CODE_SIGN_IDENTITY="$SIGN_IDENTITY" \
   OTHER_CODE_SIGN_FLAGS="--timestamp" \
   CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO \
   build | grep -E "error|warning: |BUILD" || true
-[[ -d "$APP" ]] || { echo "error: build failed" >&2; exit 1; }
+[[ -d "$APP" ]] || die "build failed"
 
 codesign --verify --deep --strict --verbose=2 "$APP"
 
 echo "==> Notarizing (this usually takes a few minutes)"
 rm -f "$ZIP"
 ditto -c -k --keepParent "$APP" "$ZIP"
-SUBMISSION="$(xcrun notarytool submit "$ZIP" --keychain-profile "$NOTARY_PROFILE" --wait --output-format json)"
+SUBMISSION="$(xcrun notarytool submit "$ZIP" "${NOTARY_AUTH[@]}" --wait --output-format json)"
 SUBMISSION_ID="$(plutil -extract id raw - <<<"$SUBMISSION")"
 STATUS="$(plutil -extract status raw - <<<"$SUBMISSION")"
 echo "    submission $SUBMISSION_ID: $STATUS"
 if [[ "$STATUS" != "Accepted" ]]; then
   echo "error: notarization was not accepted. Apple's log:" >&2
-  xcrun notarytool log "$SUBMISSION_ID" --keychain-profile "$NOTARY_PROFILE" >&2
+  xcrun notarytool log "$SUBMISSION_ID" "${NOTARY_AUTH[@]}" >&2
   exit 1
 fi
 xcrun stapler staple "$APP"
@@ -91,22 +129,25 @@ SHA256="$(shasum -a 256 "$ZIP" | awk '{print $1}')"
 echo "==> $ZIP"
 echo "    sha256 $SHA256"
 
-if [[ $PUBLISH -eq 0 ]]; then
-  echo "==> --no-publish: skipping tag, GitHub release and cask update."
+if [[ "$MODE" == "--build-only" ]]; then
+  echo "==> --build-only: nothing published."
   exit 0
 fi
 
-GH_TOKEN="$(gh auth token --user "$GH_USER")"
-export GH_TOKEN
+# --- Publish -------------------------------------------------------------------------------
 
-echo "==> Tagging v$VERSION and publishing the GitHub release"
-git tag -a "v$VERSION" -m "$APP_NAME $VERSION"
-git push origin "v$VERSION"
-gh release create "v$VERSION" "$ZIP" --repo "$REPO" --title "$APP_NAME $VERSION" --generate-notes
+echo "==> Publishing GitHub release $TAG"
+gh release create "$TAG" "$ZIP" --repo "$REPO" --title "$APP_NAME $VERSION" --verify-tag --generate-notes
 
 echo "==> Updating the Homebrew cask in $TAP_REPO"
-TAP_DIR="$(mktemp -d)"
-trap 'rm -rf "$TAP_DIR"' EXIT
+WORK_DIR="$(mktemp -d)"
+trap 'rm -rf "$WORK_DIR"' EXIT
+if [[ -n "${TAP_DEPLOY_KEY:-}" ]]; then
+  printf '%s\n' "$TAP_DEPLOY_KEY" > "$WORK_DIR/tap_key"
+  chmod 600 "$WORK_DIR/tap_key"
+  export GIT_SSH_COMMAND="ssh -i $WORK_DIR/tap_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+fi
+TAP_DIR="$WORK_DIR/tap"
 git clone --quiet "git@github.com:$TAP_REPO.git" "$TAP_DIR"
 mkdir -p "$TAP_DIR/Casks"
 cat > "$TAP_DIR/Casks/$CASK_TOKEN.rb" <<EOF
@@ -133,9 +174,14 @@ cask "$CASK_TOKEN" do
   zap trash: "~/Library/Preferences/$BUNDLE_ID.plist"
 end
 EOF
+GIT_IDENTITY=()
+if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+  GIT_IDENTITY=(-c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com")
+fi
 git -C "$TAP_DIR" add "Casks/$CASK_TOKEN.rb"
-git -C "$TAP_DIR" commit --quiet -m "$CASK_TOKEN $VERSION"
+# ${arr[@]+...} keeps macOS's bash 3.2 happy with an empty array under `set -u`.
+git -C "$TAP_DIR" ${GIT_IDENTITY[@]+"${GIT_IDENTITY[@]}"} commit --quiet -m "$CASK_TOKEN $VERSION"
 git -C "$TAP_DIR" push --quiet origin HEAD
 
 echo "==> Released $APP_NAME $VERSION"
-echo "    brew install --cask bombadiltom/tap/$CASK_TOKEN"
+echo "    brew upgrade --cask $CASK_TOKEN"
