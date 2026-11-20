@@ -15,3 +15,25 @@ open build/Build/Products/Release/BluetoothBatteryWatch.app
 ```
 
 The build uses ad-hoc signing (`CODE_SIGN_IDENTITY = "-"`), so it runs on this Mac only. Move it to `/Applications` before you turn on **Launch at login**.
+
+## Install with Homebrew
+
+```bash
+brew install --cask bombadiltom/tap/bluetoothbatterywatch
+```
+
+## Releasing
+
+`scripts/release.sh <version>` builds the app and signs it with the Developer ID certificate. It then notarizes the app, staples the ticket, tags `v<version>`, publishes a GitHub release with the zip and updates the cask in [bombadiltom/homebrew-tap](https://github.com/bombadiltom/homebrew-tap).
+
+To build and notarize without publishing anything, add `--no-publish`.
+
+One-time setup:
+
+1. **Developer ID Application certificate.** In Xcode, open Settings → Accounts, choose the team and click Manage Certificates. Click **+** and choose **Developer ID Application**.
+2. **App-specific password.** Create one at [account.apple.com](https://account.apple.com) under Sign-In and Security → App-Specific Passwords.
+3. **Store the notarization credentials in the keychain.** Run the command below. It asks for the app-specific password.
+   ```bash
+   xcrun notarytool store-credentials BluetoothBatteryWatch --apple-id <apple-id> --team-id <team-id>
+   ```
+4. **GitHub CLI.** Log in as `bombadiltom` with `gh auth login`. It doesn't have to be the active account.
