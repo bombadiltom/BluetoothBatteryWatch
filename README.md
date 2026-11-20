@@ -19,8 +19,12 @@ The build uses ad-hoc signing (`CODE_SIGN_IDENTITY = "-"`), so it runs on this M
 ## Install with Homebrew
 
 ```bash
+brew tap bombadiltom/tap
+brew trust --cask bombadiltom/tap/bluetoothbatterywatch
 brew install --cask bombadiltom/tap/bluetoothbatterywatch
 ```
+
+Homebrew 7 only loads casks from third-party taps once you trust them, which is what the `brew trust` line does. The app is signed with a Developer ID and notarized by Apple, so it opens without Gatekeeper warnings.
 
 ## Releasing
 
