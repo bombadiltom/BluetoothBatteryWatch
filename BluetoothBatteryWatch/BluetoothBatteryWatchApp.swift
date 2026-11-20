@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct BatteryWatchApp: App {
+struct BluetoothBatteryWatchApp: App {
     @State private var monitor = BatteryMonitor()
 
     var body: some Scene {

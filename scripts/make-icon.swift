@@ -1,9 +1,9 @@
 #!/usr/bin/env swift
-// Renders the BatteryWatch app icon into BatteryWatch/Assets.xcassets/AppIcon.appiconset.
+// Renders the BluetoothBatteryWatch app icon into BluetoothBatteryWatch/Assets.xcassets/AppIcon.appiconset.
 // Usage (from the repo root): swift scripts/make-icon.swift
 import AppKit
 
-let outputDir = URL(fileURLWithPath: "BatteryWatch/Assets.xcassets/AppIcon.appiconset")
+let outputDir = URL(fileURLWithPath: "BluetoothBatteryWatch/Assets.xcassets/AppIcon.appiconset")
 
 func renderMaster(size: CGFloat) -> NSBitmapImageRep {
     let rep = NSBitmapImageRep(

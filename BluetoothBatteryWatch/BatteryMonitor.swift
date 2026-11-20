@@ -69,7 +69,7 @@ final class BatteryMonitor {
                 try SMAppService.mainApp.unregister()
             }
         } catch {
-            NSLog("BatteryWatch: launch-at-login change failed: \(error)")
+            NSLog("BluetoothBatteryWatch: launch-at-login change failed: \(error)")
         }
         launchAtLogin = SMAppService.mainApp.status == .enabled
     }

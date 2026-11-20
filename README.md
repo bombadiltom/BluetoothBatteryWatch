@@ -1,4 +1,4 @@
-# BatteryWatch
+# BluetoothBatteryWatch
 
 A small menu bar app for macOS 14+ that shows the battery level of every connected Bluetooth accessory that reports one (Magic Keyboard, Magic Mouse, trackpad and others). It sends a notification when a device drops below your threshold, which defaults to 50%.
 
@@ -10,8 +10,8 @@ A small menu bar app for macOS 14+ that shows the battery level of every connect
 
 ```bash
 xcodegen generate
-xcodebuild -project BatteryWatch.xcodeproj -scheme BatteryWatch -configuration Release -derivedDataPath build build
-open build/Build/Products/Release/BatteryWatch.app
+xcodebuild -project BluetoothBatteryWatch.xcodeproj -scheme BluetoothBatteryWatch -configuration Release -derivedDataPath build build
+open build/Build/Products/Release/BluetoothBatteryWatch.app
 ```
 
 The build uses ad-hoc signing (`CODE_SIGN_IDENTITY = "-"`), so it runs on this Mac only. Move it to `/Applications` before you turn on **Launch at login**.
