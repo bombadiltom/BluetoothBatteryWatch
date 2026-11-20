@@ -23,6 +23,7 @@ CASK_TOKEN="bluetoothbatterywatch"
 BUNDLE_ID="de.lorenz-unna.batterywatch"
 NOTARY_PROFILE="${NOTARY_PROFILE:-BluetoothBatteryWatch}"
 SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application}"
+TEAM_ID="${TEAM_ID:-K6QN2C7Q55}"
 GH_USER="${GH_USER:-bombadiltom}"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -55,11 +56,14 @@ rm -rf "$BUILD_DIR"
 mkdir -p "$DIST_DIR"
 xcodebuild -project "$APP_NAME.xcodeproj" -scheme "$APP_NAME" -configuration Release \
   -derivedDataPath "$BUILD_DIR" \
+  -destination "generic/platform=macOS" \
   MARKETING_VERSION="$VERSION" \
+  DEVELOPMENT_TEAM="$TEAM_ID" \
   CURRENT_PROJECT_VERSION="$(git rev-list --count HEAD)" \
   CODE_SIGN_STYLE=Manual \
   CODE_SIGN_IDENTITY="$SIGN_IDENTITY" \
   OTHER_CODE_SIGN_FLAGS="--timestamp" \
+  CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO \
   build | grep -E "error|warning: |BUILD" || true
 [[ -d "$APP" ]] || { echo "error: build failed" >&2; exit 1; }
 
@@ -68,7 +72,15 @@ codesign --verify --deep --strict --verbose=2 "$APP"
 echo "==> Notarizing (this usually takes a few minutes)"
 rm -f "$ZIP"
 ditto -c -k --keepParent "$APP" "$ZIP"
-xcrun notarytool submit "$ZIP" --keychain-profile "$NOTARY_PROFILE" --wait
+SUBMISSION="$(xcrun notarytool submit "$ZIP" --keychain-profile "$NOTARY_PROFILE" --wait --output-format json)"
+SUBMISSION_ID="$(plutil -extract id raw - <<<"$SUBMISSION")"
+STATUS="$(plutil -extract status raw - <<<"$SUBMISSION")"
+echo "    submission $SUBMISSION_ID: $STATUS"
+if [[ "$STATUS" != "Accepted" ]]; then
+  echo "error: notarization was not accepted. Apple's log:" >&2
+  xcrun notarytool log "$SUBMISSION_ID" --keychain-profile "$NOTARY_PROFILE" >&2
+  exit 1
+fi
 xcrun stapler staple "$APP"
 spctl --assess --type execute --verbose=2 "$APP"
 
