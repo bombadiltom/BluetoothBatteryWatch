@@ -62,6 +62,6 @@ Other options:
 2. **App-specific password.** Create one at [account.apple.com](https://account.apple.com) under Sign-In and Security → App-Specific Passwords.
 3. **Store the notarization credentials in the keychain.** Run the command below. It asks for the app-specific password.
    ```bash
-   xcrun notarytool store-credentials BluetoothBatteryWatch --apple-id <apple-id> --team-id K6QN2C7Q55
+   xcrun notarytool store-credentials BombadilTom --apple-id <apple-id> --team-id K6QN2C7Q55
    ```
 4. **GitHub CLI.** Log in as `bombadiltom` with `gh auth login`. It doesn't have to be the active account.
