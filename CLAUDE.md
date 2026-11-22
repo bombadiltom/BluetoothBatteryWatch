@@ -34,9 +34,12 @@ Local builds are signed ad hoc (`CODE_SIGN_IDENTITY: "-"`). There's no test targ
 
 ## Things to know
 
-- **Keep the bundle ID `de.lorenz-unna.batterywatch`**, even though it doesn't match the app name. It's left from the app's first name, BatteryWatch. Changing it would reset the threshold setting, notification permission and the login item for existing installs.
+- **Bundle ID:** it's `de.idiotentruppe.batterywatch`. The `batterywatch` suffix is left from the app's first name, BatteryWatch. Before 1.2 the ID was `de.lorenz-unna.batterywatch`.
+  - Don't change it casually. A new ID resets notification permission and the login item for existing installs.
+  - `BatteryMonitor.importLegacySettings()` copies the threshold and alert state once from the old ID's defaults, using the `legacyDomains` list. If the ID ever changes again, add the current one to that list.
+  - The cask's `zap` removes the preference files of both IDs.
 - **GitHub account:** the repo and the tap belong to `bombadiltom`, but the active `gh` account on this Mac is `tlorenz-reply`, so don't switch it. Use `GH_TOKEN=$(gh auth token --user bombadiltom) gh …`. `release.sh` already does that. Git pushes go over SSH (`git@github.com:bombadiltom/…`).
 - **Git identity:** the personal identity only applies inside `~/Projects/private/` (`includeIf` in the global git config). Git operations outside it, such as a clone in `/tmp` or Homebrew's copy of the tap, commit under the work identity. That's why `release.sh` clones the tap into `build/`.
 - **Homebrew 7** refuses casks from untrusted taps, so the install instructions need `brew trust --cask bombadiltom/tap/bluetoothbatterywatch`. `brew style` wants `depends_on macos: :sonoma`, not `">= :sonoma"`.
-- **Login item:** to check it after reinstalling or moving the app, run `sfltool dumpbtm | grep -B1 -A1 "2.de.lorenz-unna.batterywatch"`. It should show `enabled` with the `/Applications` path.
+- **Login item:** to check it after reinstalling or moving the app, run `sfltool dumpbtm | grep -B1 -A1 "2.de.idiotentruppe.batterywatch"`. It should show `enabled` with the `/Applications` path.
 - **`release.sh` runs on macOS's bash 3.2.** Under `set -u`, expanding an empty array fails, so use the `${arr[@]+"${arr[@]}"}` form.

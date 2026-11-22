@@ -206,7 +206,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "de.lorenz-unna.batterywatch";
+				PRODUCT_BUNDLE_IDENTIFIER = de.idiotentruppe.batterywatch;
 				SDKROOT = macosx;
 			};
 			name = Debug;
@@ -225,7 +225,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "de.lorenz-unna.batterywatch";
+				PRODUCT_BUNDLE_IDENTIFIER = de.idiotentruppe.batterywatch;
 				SDKROOT = macosx;
 			};
 			name = Release;

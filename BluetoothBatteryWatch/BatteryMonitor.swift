@@ -36,6 +36,7 @@ final class BatteryMonitor {
     func isLow(_ device: BatteryDevice) -> Bool { device.percent < threshold }
 
     init() {
+        Self.importLegacySettings()
         let stored = UserDefaults.standard.integer(forKey: Keys.threshold)
         threshold = stored == 0 ? 50 : stored
         alerted = Set(UserDefaults.standard.stringArray(forKey: Keys.alerted) ?? [])
@@ -109,6 +110,23 @@ final class BatteryMonitor {
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         notificationsAllowed = settings.authorizationStatus == .authorized
             || settings.authorizationStatus == .provisional
+    }
+
+    /// Bundle IDs the app used before; settings are copied from the first one found, once.
+    private static let legacyDomains = ["de.lorenz-unna.batterywatch"]
+
+    /// One-time import of the threshold and alert state from a previous bundle ID, so the
+    /// bundle ID change doesn't reset them. Only runs while this ID has no settings of its own.
+    private static func importLegacySettings() {
+        let defaults = UserDefaults.standard
+        guard defaults.object(forKey: Keys.threshold) == nil else { return }
+        for domain in legacyDomains {
+            guard let legacy = defaults.persistentDomain(forName: domain) else { continue }
+            for key in [Keys.threshold, Keys.alerted] {
+                if let value = legacy[key] { defaults.set(value, forKey: key) }
+            }
+            return
+        }
     }
 
     private enum Keys {

@@ -37,7 +37,8 @@ APP_NAME="BluetoothBatteryWatch"
 REPO="bombadiltom/BluetoothBatteryWatch"
 TAP_REPO="bombadiltom/homebrew-tap"
 CASK_TOKEN="bluetoothbatterywatch"
-BUNDLE_ID="de.lorenz-unna.batterywatch"
+BUNDLE_ID="de.idiotentruppe.batterywatch"
+LEGACY_BUNDLE_ID="de.lorenz-unna.batterywatch" # before 1.2; zap still cleans it up
 NOTARY_PROFILE="${NOTARY_PROFILE:-BombadilTom}"
 SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application}"
 TEAM_ID="${TEAM_ID:-K6QN2C7Q55}"
@@ -174,7 +175,10 @@ cask "$CASK_TOKEN" do
 
   uninstall quit: "$BUNDLE_ID"
 
-  zap trash: "~/Library/Preferences/$BUNDLE_ID.plist"
+  zap trash: [
+    "~/Library/Preferences/$BUNDLE_ID.plist",
+    "~/Library/Preferences/$LEGACY_BUNDLE_ID.plist",
+  ]
 end
 EOF
 GIT_IDENTITY=()
