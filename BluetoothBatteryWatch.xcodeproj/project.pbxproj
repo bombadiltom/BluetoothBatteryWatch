@@ -11,14 +11,18 @@
 		50BF4F6E88E3538B068B05DE /* MenuContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F57C4EC2BD603840805B60 /* MenuContentView.swift */; };
 		5CB184805D20262E8177280B /* BatteryMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E62ABD3AE19E8B8EC05E0779 /* BatteryMonitor.swift */; };
 		61D54559FE9E83C03A7B3924 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DCE26D1B07A00D820F14AA5B /* Assets.xcassets */; };
+		7DBA802988C2C4116466BFF2 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7D08D5959F539806D5F88FEA /* PrivacyInfo.xcprivacy */; };
 		8F25A6E34ABE3A0C7AEB4B4D /* BatteryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27F3964D70BB8457B07C015B /* BatteryReader.swift */; };
+		C8C2F264F33D5F4319CA7923 /* BatterySymbol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5DB978BFBCFF7042FA7C168 /* BatterySymbol.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		05A88B18951DB7EE70F14F74 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		27F3964D70BB8457B07C015B /* BatteryReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryReader.swift; sourceTree = "<group>"; };
+		7D08D5959F539806D5F88FEA /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		97541DF5F237D36A5250B121 /* BluetoothBatteryWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothBatteryWatchApp.swift; sourceTree = "<group>"; };
 		99E92935E11FD9269A5443E0 /* AppStore.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AppStore.entitlements; sourceTree = "<group>"; };
+		A5DB978BFBCFF7042FA7C168 /* BatterySymbol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatterySymbol.swift; sourceTree = "<group>"; };
 		B6F57C4EC2BD603840805B60 /* MenuContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuContentView.swift; sourceTree = "<group>"; };
 		DCE26D1B07A00D820F14AA5B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E62ABD3AE19E8B8EC05E0779 /* BatteryMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryMonitor.swift; sourceTree = "<group>"; };
@@ -49,9 +53,11 @@
 				DCE26D1B07A00D820F14AA5B /* Assets.xcassets */,
 				E62ABD3AE19E8B8EC05E0779 /* BatteryMonitor.swift */,
 				27F3964D70BB8457B07C015B /* BatteryReader.swift */,
+				A5DB978BFBCFF7042FA7C168 /* BatterySymbol.swift */,
 				97541DF5F237D36A5250B121 /* BluetoothBatteryWatchApp.swift */,
 				05A88B18951DB7EE70F14F74 /* Info.plist */,
 				B6F57C4EC2BD603840805B60 /* MenuContentView.swift */,
+				7D08D5959F539806D5F88FEA /* PrivacyInfo.xcprivacy */,
 			);
 			path = BluetoothBatteryWatch;
 			sourceTree = "<group>";
@@ -116,6 +122,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				61D54559FE9E83C03A7B3924 /* Assets.xcassets in Resources */,
+				7DBA802988C2C4116466BFF2 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -128,6 +135,7 @@
 			files = (
 				5CB184805D20262E8177280B /* BatteryMonitor.swift in Sources */,
 				8F25A6E34ABE3A0C7AEB4B4D /* BatteryReader.swift in Sources */,
+				C8C2F264F33D5F4319CA7923 /* BatterySymbol.swift in Sources */,
 				47C5F89D3261952D813BC0BC /* BluetoothBatteryWatchApp.swift in Sources */,
 				50BF4F6E88E3538B068B05DE /* MenuContentView.swift in Sources */,
 			);

@@ -86,7 +86,7 @@ All of these are done in your Apple Developer account, for team `K6QN2C7Q55`:
 1. **Certificates.** In Xcode → Settings → Accounts → Manage Certificates, add an **Apple Distribution** and a **Mac Installer Distribution** certificate. The installer certificate shows up in the keychain as "3rd Party Mac Developer Installer".
 2. **App ID.** At [developer.apple.com → Identifiers](https://developer.apple.com/account/resources/identifiers/list), register `de.idiotentruppe.batterywatch` as a macOS App ID. It needs no extra capabilities.
 3. **Provisioning profile.** Under Profiles, create a **Mac App Store Connect** profile for that App ID with the Apple Distribution certificate. Name it `BluetoothBatteryWatch App Store` (or set `MAS_PROFILE`), download it and double-click it.
-4. **App record.** In [App Store Connect](https://appstoreconnect.apple.com) → Apps, create a new macOS app with the bundle ID `de.idiotentruppe.batterywatch`. Use `https://github.com/bombadiltom/BluetoothBatteryWatch/blob/main/PRIVACY.md` as the privacy policy URL. For App Privacy, choose "Data Not Collected".
+4. **App record.** In [App Store Connect](https://appstoreconnect.apple.com) → Apps, create a new macOS app with the bundle ID `de.idiotentruppe.batterywatch`. Fill it in from [`AppStore/`](AppStore/README.md): listing copy, App Privacy answers, review notes and screenshots.
 5. **API key for uploads.** In App Store Connect → Users and Access → Integrations → App Store Connect API, create a key with the App Manager role. Save the `.p8` as `~/.appstoreconnect/private_keys/AuthKey_<key-id>.p8`, then set the following in your shell:
    ```bash
    export ASC_KEY_ID=<key-id> ASC_ISSUER_ID=<issuer-id>
