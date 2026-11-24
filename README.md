@@ -65,3 +65,29 @@ Other options:
    xcrun notarytool store-credentials BombadilTom --apple-id <apple-id> --team-id K6QN2C7Q55
    ```
 4. **GitHub CLI.** Log in as `bombadiltom` with `gh auth login`. It doesn't have to be the active account.
+
+## Mac App Store
+
+The App Store version is built separately from the Homebrew version. It's sandboxed (see [`AppStore.entitlements`](BluetoothBatteryWatch/AppStore.entitlements)), signed with the App Store certificates and uploaded as a `.pkg`. The Homebrew version stays unsandboxed.
+
+```bash
+scripts/release.sh 1.2 --app-store-build-only   # signed .pkg in dist/, nothing uploaded
+scripts/release.sh 1.2 --app-store              # same, then uploads to App Store Connect
+```
+
+After the upload, pick the build on the app's version page in App Store Connect and submit it for review. Each upload needs a new build number. The build number is the commit count, so commit something before uploading the same version again.
+
+A sandboxed app keeps its settings in its own container, so switching from the Homebrew version to the App Store version resets the threshold to 50%.
+
+### One-time setup
+
+All of these are done in your Apple Developer account, for team `K6QN2C7Q55`:
+
+1. **Certificates.** In Xcode → Settings → Accounts → Manage Certificates, add an **Apple Distribution** and a **Mac Installer Distribution** certificate. The installer certificate shows up in the keychain as "3rd Party Mac Developer Installer".
+2. **App ID.** At [developer.apple.com → Identifiers](https://developer.apple.com/account/resources/identifiers/list), register `de.idiotentruppe.batterywatch` as a macOS App ID. It needs no extra capabilities.
+3. **Provisioning profile.** Under Profiles, create a **Mac App Store Connect** profile for that App ID with the Apple Distribution certificate. Name it `BluetoothBatteryWatch App Store` (or set `MAS_PROFILE`), download it and double-click it.
+4. **App record.** In [App Store Connect](https://appstoreconnect.apple.com) → Apps, create a new macOS app with the bundle ID `de.idiotentruppe.batterywatch`. Use `https://github.com/bombadiltom/BluetoothBatteryWatch/blob/main/PRIVACY.md` as the privacy policy URL. For App Privacy, choose "Data Not Collected".
+5. **API key for uploads.** In App Store Connect → Users and Access → Integrations → App Store Connect API, create a key with the App Manager role. Save the `.p8` as `~/.appstoreconnect/private_keys/AuthKey_<key-id>.p8`, then set the following in your shell:
+   ```bash
+   export ASC_KEY_ID=<key-id> ASC_ISSUER_ID=<issuer-id>
+   ```

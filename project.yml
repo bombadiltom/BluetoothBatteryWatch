@@ -35,3 +35,6 @@ targets:
         LSApplicationCategoryType: public.app-category.utilities
         NSBluetoothAlwaysUsageDescription: BluetoothBatteryWatch looks up the names of your Bluetooth keyboard, mouse and other accessories so it can show which one needs charging.
         NSHumanReadableCopyright: ""
+        # Only uses the system's encryption (none of its own), so App Store Connect skips the
+        # export compliance question.
+        ITSAppUsesNonExemptEncryption: false
