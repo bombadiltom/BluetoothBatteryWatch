@@ -20,10 +20,12 @@
 #   scripts/release.sh <version> --app-store
 #       Same, then uploads it to App Store Connect (submit it for review there).
 #
-# Prerequisites for the App Store modes (see README.md → Mac App Store): the "Apple
-# Distribution" and "3rd Party Mac Developer Installer" certificates in the keychain, the Mac App
-# Store provisioning profile installed (name in $MAS_PROFILE), and for uploading an App Store
-# Connect API key: ASC_KEY_ID, ASC_ISSUER_ID and the .p8 at $ASC_KEY_PATH
+# The App Store modes use automatic signing: Xcode registers the App ID, manages the
+# provisioning profile and signs with Apple's cloud-managed distribution certificates. They need
+# Xcode to be signed in to an Apple account of team $TEAM_ID (Xcode → Settings → Accounts), and
+# for --app-store an app record in App Store Connect (see README.md → Mac App Store).
+# Optional, e.g. for CI without an Xcode account: an App Store Connect API key with the Admin
+# role in ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_PATH
 # (default ~/.appstoreconnect/private_keys/AuthKey_<ASC_KEY_ID>.p8).
 #
 # Local prerequisites for --build-only / --publish-existing-tag (see README.md → Releasing):
@@ -63,36 +65,19 @@ cd "$ROOT"
 die() { echo "error: $*" >&2; exit 1; }
 
 # --- Mode: Mac App Store -------------------------------------------------------------------
-# Separate from the Developer ID build: sandboxed (AppStore.entitlements), signed with the
-# App Store certificates and a provisioning profile, packaged as a .pkg instead of a zip.
+# Separate from the Developer ID build: sandboxed (AppStore.entitlements), signed automatically
+# through the Apple account, packaged as a .pkg instead of a zip.
 
 if [[ "$MODE" == --app-store* ]]; then
-  MAS_APP_IDENTITY="${MAS_APP_IDENTITY:-Apple Distribution}"
-  MAS_INSTALLER_IDENTITY="${MAS_INSTALLER_IDENTITY:-3rd Party Mac Developer Installer}"
-  MAS_PROFILE="${MAS_PROFILE:-BluetoothBatteryWatch App Store}"
-
   [[ -z "$(git status --porcelain)" ]] || die "working tree is not clean — commit first."
-  for identity in "$MAS_APP_IDENTITY" "$MAS_INSTALLER_IDENTITY"; do
-    security find-identity -v | grep -q "\"$identity: .*($TEAM_ID)\"" \
-      || die "no \"$identity\" certificate for team $TEAM_ID in the keychain (see README.md → Mac App Store)."
-  done
 
-  profile_installed=no
-  for dir in "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" "$HOME/Library/MobileDevice/Provisioning Profiles"; do
-    for profile in "$dir"/*.provisionprofile; do
-      [[ -f "$profile" ]] || continue
-      name="$(security cms -D -i "$profile" 2>/dev/null | plutil -extract Name raw - 2>/dev/null || true)"
-      if [[ "$name" == "$MAS_PROFILE" ]]; then profile_installed=yes; break 2; fi
-    done
-  done
-  [[ "$profile_installed" == yes ]] \
-    || die "provisioning profile \"$MAS_PROFILE\" isn't installed — download it and double-click it (or set MAS_PROFILE)."
-
-  if [[ "$MODE" == "--app-store" ]]; then
-    [[ -n "${ASC_KEY_ID:-}" && -n "${ASC_ISSUER_ID:-}" ]] \
-      || die "set ASC_KEY_ID and ASC_ISSUER_ID (App Store Connect → Users and Access → Integrations)."
+  # Without an API key, xcodebuild uses the accounts signed in to Xcode.
+  ASC_AUTH=()
+  if [[ -n "${ASC_KEY_ID:-}" ]]; then
+    [[ -n "${ASC_ISSUER_ID:-}" ]] || die "ASC_KEY_ID is set but ASC_ISSUER_ID isn't."
     ASC_KEY_PATH="${ASC_KEY_PATH:-$HOME/.appstoreconnect/private_keys/AuthKey_$ASC_KEY_ID.p8}"
     [[ -f "$ASC_KEY_PATH" ]] || die "App Store Connect API key not found at $ASC_KEY_PATH."
+    ASC_AUTH=(-authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
   fi
 
   MAS_DIR="$ROOT/build/appstore"
@@ -103,20 +88,21 @@ if [[ "$MODE" == --app-store* ]]; then
   xcodegen generate --quiet
   rm -rf "$MAS_DIR"
   mkdir -p "$MAS_DIR" "$ROOT/dist"
+  # ${arr[@]+...} keeps macOS's bash 3.2 happy with an empty array under `set -u`.
   xcodebuild archive -project "$APP_NAME.xcodeproj" -scheme "$APP_NAME" -configuration Release \
     -archivePath "$ARCHIVE" \
     -derivedDataPath "$MAS_DIR/DerivedData" \
     -destination "generic/platform=macOS" \
+    -allowProvisioningUpdates ${ASC_AUTH[@]+"${ASC_AUTH[@]}"} \
     MARKETING_VERSION="$VERSION" \
     CURRENT_PROJECT_VERSION="$(git rev-list --count HEAD)" \
     DEVELOPMENT_TEAM="$TEAM_ID" \
-    CODE_SIGN_STYLE=Manual \
-    CODE_SIGN_IDENTITY="$MAS_APP_IDENTITY" \
-    PROVISIONING_PROFILE_SPECIFIER="$MAS_PROFILE" \
+    CODE_SIGN_STYLE=Automatic \
+    CODE_SIGN_IDENTITY="Apple Development" \
     CODE_SIGN_ENTITLEMENTS="$APP_NAME/AppStore.entitlements" \
     CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO \
-    | grep -E "error|warning: |ARCHIVE" || true
-  [[ -d "$ARCHIVE" ]] || die "archive failed"
+    2>&1 | grep -E "error|warning: |ARCHIVE" || true
+  [[ -d "$ARCHIVE" ]] || die "archive failed (is Xcode signed in to team $TEAM_ID under Settings → Accounts?)"
 
   export_archive() { # $1 = export | upload
     local options="$MAS_DIR/ExportOptions-$1.plist"
@@ -128,21 +114,13 @@ if [[ "$MODE" == --app-store* ]]; then
   <key>method</key><string>app-store-connect</string>
   <key>destination</key><string>$1</string>
   <key>teamID</key><string>$TEAM_ID</string>
-  <key>signingStyle</key><string>manual</string>
-  <key>signingCertificate</key><string>$MAS_APP_IDENTITY</string>
-  <key>installerSigningCertificate</key><string>$MAS_INSTALLER_IDENTITY</string>
-  <key>provisioningProfiles</key>
-  <dict><key>$BUNDLE_ID</key><string>$MAS_PROFILE</string></dict>
+  <key>signingStyle</key><string>automatic</string>
   <key>manageAppVersionAndBuildNumber</key><false/>
 </dict>
 </plist>
 EOF
-    local auth=()
-    if [[ "$1" == upload ]]; then
-      auth=(-authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
-    fi
     xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportOptionsPlist "$options" \
-      -exportPath "$MAS_DIR/export-$1" ${auth[@]+"${auth[@]}"} 2>&1 \
+      -exportPath "$MAS_DIR/export-$1" -allowProvisioningUpdates ${ASC_AUTH[@]+"${ASC_AUTH[@]}"} 2>&1 \
       | grep -vE "^\s*$" | tail -15
   }
 
@@ -150,7 +128,7 @@ EOF
   export_archive export
   [[ -f "$MAS_DIR/export-export/$APP_NAME.pkg" ]] || die "export failed"
   mv -f "$MAS_DIR/export-export/$APP_NAME.pkg" "$PKG"
-  pkgutil --check-signature "$PKG" | head -3
+  pkgutil --check-signature "$PKG" | head -4
   codesign -d --entitlements - "$ARCHIVE/Products/Applications/$APP_NAME.app" 2>/dev/null \
     | grep -q "com.apple.security.app-sandbox" || die "the archived app isn't sandboxed."
   echo "==> $PKG"
@@ -163,7 +141,7 @@ EOF
   echo "==> Uploading to App Store Connect"
   export_archive upload
   echo "==> Uploaded $APP_NAME $VERSION (build $(git rev-list --count HEAD))."
-  echo "    After processing it appears under TestFlight / the app's version page in App Store Connect."
+  echo "    Once processed, pick it on the app's version page in App Store Connect and submit it."
   exit 0
 fi
 

@@ -9,23 +9,20 @@
 - **Privacy policy:** live at <https://www.idiotentruppe.de/apps/bluetoothbatterywatch/privacy/>, from the website repo.
 - **Store texts:** listing copy, App Privacy answers and review notes are in this folder.
 - **Screenshots:** three Mac screenshots at 2880×1800 with no alpha channel, in `screenshots/`. They show the app's real menu view with sample data, rendered by `scripts/make-screenshots.sh`. Known difference from the live app: the level bars render grey there. Replace the screenshots with real ones if that bothers you.
+- **Signing:** this is automatic. Running `scripts/release.sh 1.2 --app-store-build-only` on Nov 24, 2026 registered the App ID `de.idiotentruppe.batterywatch`, created the App Store profile, and exported a `.pkg` signed with the cloud-managed Apple Distribution and Mac Installer certificates, with the sandbox entitlements and the privacy manifest. Nothing has been uploaded yet.
 - **Build and upload:** `scripts/release.sh <version> --app-store`. See the README's "Mac App Store" section.
 
-## What's left: only you can do these
+## What's left
 
-1. **Certificates.** In Xcode → Settings → Accounts → (team K6QN2C7Q55) → Manage Certificates → **+**, add an **Apple Distribution** and a **Mac Installer Distribution** certificate.
-2. **App ID.** At [developer.apple.com → Identifiers](https://developer.apple.com/account/resources/identifiers/list), click **+**, choose App IDs → App, platform macOS, and enter the bundle ID `de.idiotentruppe.batterywatch`. No capabilities are needed.
-3. **Provisioning profile.** Under [Profiles](https://developer.apple.com/account/resources/profiles/list), click **+**, choose Distribution → **Mac App Store Connect**, select the App ID and the Apple Distribution certificate, and name it `BluetoothBatteryWatch App Store`. Download it and double-click it.
-4. **App record.** In [App Store Connect](https://appstoreconnect.apple.com) → Apps → **+** → New App, choose platform macOS, name `BluetoothBatteryWatch` (check it isn't already taken), and bundle ID `de.idiotentruppe.batterywatch`. Then fill in:
+1. **App record (you).** In [App Store Connect](https://appstoreconnect.apple.com) → Apps → **+** → New App, choose platform macOS, name `BluetoothBatteryWatch` (check it isn't already taken), bundle ID `de.idiotentruppe.batterywatch`, and any SKU, for example `bluetoothbatterywatch`. Then fill in:
    - listing copy, URLs, categories and copyright from `listing-copy.md`
    - the App Privacy questionnaire from `app-privacy-answers.md` ("Data Not Collected")
    - the review notes from `review-notes.md`
    - Pricing and Availability (Free) and the age rating questionnaire (4+)
    - the screenshots from `screenshots/`
-5. **API key for the upload.** In App Store Connect → Users and Access → Integrations → App Store Connect API, create a key with the **App Manager** role. Download the `.p8` (you can only do that once), save it as `~/.appstoreconnect/private_keys/AuthKey_<key-id>.p8`, and `export ASC_KEY_ID=<key-id> ASC_ISSUER_ID=<issuer-id>`.
-6. **Upload.** Run `scripts/release.sh 1.2 --app-store`, or ask Claude to run it once steps 1–5 are done.
-7. **Submit.** On the macOS version page, pick the processed build and click **Add for Review**.
-8. **Once it's live:** add `macAppStore: <link>` to `src/content/apps/bluetoothbatterywatch.md` in the website repo, as ConcerTodo has, so the app page shows the App Store button next to Homebrew.
+2. **Upload.** Run `scripts/release.sh 1.2 --app-store`, or ask Claude to. Xcode has to be signed in to your Apple account (Settings → Accounts), which it already is on this Mac.
+3. **Submit (you).** On the macOS version page, pick the processed build and click **Add for Review**.
+4. **Once it's live:** add `macAppStore: <link>` to `src/content/apps/bluetoothbatterywatch.md` in the website repo, as ConcerTodo has, so the app page shows the App Store button next to Homebrew.
 
 ## Files in this folder
 

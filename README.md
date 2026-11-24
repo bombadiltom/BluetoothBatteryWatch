@@ -68,7 +68,7 @@ Other options:
 
 ## Mac App Store
 
-The App Store version is built separately from the Homebrew version. It's sandboxed (see [`AppStore.entitlements`](BluetoothBatteryWatch/AppStore.entitlements)), signed with the App Store certificates and uploaded as a `.pkg`. The Homebrew version stays unsandboxed.
+The App Store version is built separately from the Homebrew version. It's sandboxed (see [`AppStore.entitlements`](BluetoothBatteryWatch/AppStore.entitlements)), signed automatically through your Apple account and uploaded as a `.pkg`. The Homebrew version stays unsandboxed.
 
 ```bash
 scripts/release.sh 1.2 --app-store-build-only   # signed .pkg in dist/, nothing uploaded
@@ -81,13 +81,9 @@ A sandboxed app keeps its settings in its own container, so switching from the H
 
 ### One-time setup
 
-All of these are done in your Apple Developer account, for team `K6QN2C7Q55`:
+Signing is automatic. Xcode registers the App ID `de.idiotentruppe.batterywatch`, manages the App Store provisioning profile, and signs with Apple's cloud-managed distribution certificates, so there's no certificate or profile to create by hand. The upload goes through the same account.
 
-1. **Certificates.** In Xcode → Settings → Accounts → Manage Certificates, add an **Apple Distribution** and a **Mac Installer Distribution** certificate. The installer certificate shows up in the keychain as "3rd Party Mac Developer Installer".
-2. **App ID.** At [developer.apple.com → Identifiers](https://developer.apple.com/account/resources/identifiers/list), register `de.idiotentruppe.batterywatch` as a macOS App ID. It needs no extra capabilities.
-3. **Provisioning profile.** Under Profiles, create a **Mac App Store Connect** profile for that App ID with the Apple Distribution certificate. Name it `BluetoothBatteryWatch App Store` (or set `MAS_PROFILE`), download it and double-click it.
-4. **App record.** In [App Store Connect](https://appstoreconnect.apple.com) → Apps, create a new macOS app with the bundle ID `de.idiotentruppe.batterywatch`. Fill it in from [`AppStore/`](AppStore/README.md): listing copy, App Privacy answers, review notes and screenshots.
-5. **API key for uploads.** In App Store Connect → Users and Access → Integrations → App Store Connect API, create a key with the App Manager role. Save the `.p8` as `~/.appstoreconnect/private_keys/AuthKey_<key-id>.p8`, then set the following in your shell:
-   ```bash
-   export ASC_KEY_ID=<key-id> ASC_ISSUER_ID=<issuer-id>
-   ```
+1. **Xcode account.** In Xcode → Settings → Accounts, sign in to an Apple account that's a member of team `K6QN2C7Q55`. The script uses it through `-allowProvisioningUpdates`.
+2. **App record.** In [App Store Connect](https://appstoreconnect.apple.com) → Apps, create a new macOS app with the bundle ID `de.idiotentruppe.batterywatch`. Fill it in from [`AppStore/`](AppStore/README.md): listing copy, App Privacy answers, review notes and screenshots. Apple can't create the record from a build, so this one stays manual.
+
+Without an Xcode account, for example in CI, set `ASC_KEY_ID`, `ASC_ISSUER_ID` and, if the `.p8` isn't in `~/.appstoreconnect/private_keys/`, `ASC_KEY_PATH` to an App Store Connect API key. Cloud signing needs the key's **Admin** role.
